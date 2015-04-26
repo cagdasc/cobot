@@ -21,10 +21,7 @@ def find_real_paths(tag, tmp_list, d):
     new_list = copy.copy(tmp_list)
     if len(new_list) > 2:
         for i in range(0, len(new_list) - 2):
-            new_shingle_list = []
-            new_shingle_list.append(new_list[i])
-            new_shingle_list.append(new_list[i + 1])
-            new_shingle_list.append(new_list[i + 2])
+            new_shingle_list = [new_list[i], new_list[i + 1], new_list[i + 2]]
             real_shingles = RealShingles(new_shingle_list, d)
             real_paths.append(real_shingles)
     if len(tmp_list) > 0:
@@ -65,8 +62,6 @@ def calculate_distance(doci, docj):
             if j.real_paths == i.real_paths:
                 control = 1
                 intersection_sum0 += abs(j.weight - i.weight)
-                print(j.weight)
-                print(i.weight)
         if control == 0:
             diff_sum0 += j.weight
         control = 0
@@ -104,9 +99,9 @@ if __name__ == '__main__':
                         find_all_hor_paths(root_tag, 0)
 
                         new_real = copy.copy(real_paths)
-                        new_virt = copy.copy(virtual_hor)
+                        new_virtual = copy.copy(virtual_hor)
 
-                        doc = Document(new_real, new_virt)
+                        doc = Document(new_real, new_virtual)
                         doc_list.append(doc)
 
                         del real_paths[:]
@@ -118,6 +113,14 @@ if __name__ == '__main__':
 
     distance_matrix = []
 
+    for doci in doc_list:
+        temp_dist = []
+        for docj in doc_list:
+            dist = calculate_distance(doci, docj)
+            temp_dist.append(dist)
+        distance_matrix.append(temp_dist)
 
-    x = calculate_distance(doc_list[0], doc_list[0])
-    print(x)
+    for a in distance_matrix:
+        print(a)
+
+

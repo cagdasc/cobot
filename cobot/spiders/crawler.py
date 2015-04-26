@@ -29,17 +29,6 @@ class PageWalker(CrawlSpider):
             file_name = response.url.split(self.allowed_domains[0])[1]
             file_name = ''.join(file_name.split('/'))
 
-            """
-            soup = BeautifulSoup(response.body, "lxml")
-
-            i = 0
-            for tag in soup.find_all(True):
-                for tag0 in tag.children:
-                    if tag0.name is not None:
-                        print(tag0.name + ' %d' % i)
-                i += 1
-            """
-
             form = response.xpath('//form').extract()
             if form:
                 if is_allowed(file_name):

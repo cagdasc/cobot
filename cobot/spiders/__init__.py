@@ -5,7 +5,7 @@
 import os
 
 SITES = os.path.join(os.getcwd(), 'sites')
-denied_extension = ['jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'pdf']
+denied_extension = ['jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'pdf', 'txt', 'ppt', 'pptx']
 
 
 def is_allowed(filename):
