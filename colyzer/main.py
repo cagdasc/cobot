@@ -7,79 +7,36 @@ from lxml import etree
 
 from colyzer import SITES
 import ShingleBased
-
-all_paths = []
-
-
-def find_real_paths(tag, tmp_list, d):
-    tmp_list.append(tag.tag)
-    if len(tag) != 0:
-        for t in tag:
-            find_real_paths(t, tmp_list, d)
-    new_list = copy.copy(tmp_list)
-    shingles0 = ShingleBased.Shingles(new_list, d, 0)
-    cntrl = True
-    i = 0
-
-    while cntrl and i < len(all_paths):
-        if shingles0.path == all_paths[i].path:
-            all_paths[i].weight += shingles0.weight
-            cntrl = False
-        i += 1
-    if cntrl:
-        all_paths.append(shingles0)
-
-    if len(tmp_list) > 0:
-        del tmp_list[len(tmp_list) - 1]
-    return
+import math
 
 
-def find_all_real_paths(tag, depth):
-    depth += 1
-    for t in tag:
-        temp_list = []
-        find_real_paths(t, temp_list, depth)
-        find_all_real_paths(t, depth)
+def sim(row_i, row_j):
+    row_ij_sum = 0
+    row_i_sq_sum = 0
+    row_j_sq_sum = 0
+
+    for index in range(0, len(row_i)):
+        row_ij_sum += row_i[index] * row_j[index]
+        row_i_sq_sum += math.pow(row_i[index], 2)
+        row_j_sq_sum += math.pow(row_j[index], 2)
+
+    return round(row_ij_sum / (math.sqrt(row_i_sq_sum) * math.sqrt(row_j_sq_sum)), 5)
 
 
-def find_all_hor_paths(l, depth):
-    temp_list = []
-    temp_list_tag = []
-    for t in l:
-        temp_list.append(t.tag)
-        temp_list_tag.append(t)
-    if len(temp_list) is not 0:
-        new_list = copy.copy(temp_list)
-        shingles0 = ShingleBased.Shingles(new_list, depth, 1)
-        cntrl = True
-        i = 0
-        while cntrl and i < len(all_paths):
-            if shingles0.path == all_paths[i].path:
-                all_paths[i].weight += shingles0.weight
-                cntrl = False
-            i += 1
-        if cntrl:
-            all_paths.append(shingles0)
-
-        depth += 1
-        for i in temp_list_tag:
-            find_all_hor_paths(i, depth)
-
-
-def calculate_distance(doci, docj):
+def calculate_distance(doc_0, doc_1):
     intersection_sum0 = 0.0
     diff_sum0 = 0.0
     control = 0
 
-    for j in docj.all_paths:
-        for i in doci.all_paths:
-            if j.path == i.path:
+    for index_j in doc_1.all_paths:
+        for index_i in doc_0.all_paths:
+            if index_j.path == index_i.path:
                 control = 1
-                intersection_sum0 += abs(j.weight - i.weight)
+                intersection_sum0 += abs(index_j.weight - index_i.weight)
         if control == 0:
-            diff_sum0 += j.weight
+            diff_sum0 += index_j.weight
         control = 0
-    return diff_sum0 + intersection_sum0
+    return round(diff_sum0 + intersection_sum0, 5)
 
 
 if __name__ == '__main__':
@@ -95,45 +52,95 @@ if __name__ == '__main__':
 
                     # try:
                     root_tag = tree.getroot()[1]
-                    doc = ShingleBased.Document()
+                    doc = ShingleBased.Document(html_file)
                     doc.find_all_real_paths(root_tag, -1)
                     doc.find_all_hor_paths(root_tag, 0)
                     doc_list.append(doc)
 
-
-                    """
-                    find_all_real_paths(root_tag, -1)
-                    find_all_hor_paths(root_tag, 0)
-
-                    new_all_paths = copy.copy(all_paths)
-
-                    doc = ShingleBased.Document(new_all_paths)
-                    doc_list.append(doc)
-
-                    del all_paths[:]
-                    """
-
                     html_files_path.append(os.path.join(top_dir1, html_file))
-                    #except Exception:
-                    #   print(html_file + ' Exp')
-
+                    # except Exception:
+                    # print(html_file + ' Exp')
 
     distance_matrix = []
 
     i = 0
     j = 0
-    for doci in doc_list:
+
+    temp_max = 0
+    for doc_i in doc_list:
         temp_dist = []
-        for docj in doc_list:
-            dist = calculate_distance(doci, docj)
+        for doc_j in doc_list:
+            dist = calculate_distance(doc_i, doc_j)
             temp_dist.append(dist)
+            if dist > temp_max:
+                temp_max = dist
             print str(i) + ' -- ' + str(j)
-            j +=1
+            j += 1
         distance_matrix.append(temp_dist)
         j = 0
         i += 1
 
-    for a in distance_matrix:
-        print(a)
+    for a in range(0, len(distance_matrix)):
+        distance_matrix[a] = [round(i / temp_max, 5) for i in distance_matrix[a]]
+
+    threshold = 0.755
+    cluster_size = 5
+    clusters = []
+    centroids = []
+
+    for i in range(0, cluster_size):
+        new_list = copy.copy(distance_matrix[i])
+        cluster_obj = ShingleBased.Clusters(new_list)
+        cluster_obj.dists.append(new_list)
+        new_doc = copy.copy(doc_list[i])
+        cluster_obj.docs.append(new_doc)
+        cluster_obj.doc_index.append(i)
+        clusters.append(cluster_obj)
+
+    print(distance_matrix[0][0])
+
+    for it in range(0, 500):
+        print('Iteration --> ' + str(it))
+
+        for d in range(0, len(distance_matrix)):
+            temp_max = 0.0
+            temp_index = 0
+            for c in range(0, len(clusters)):
+                similarity = sim(distance_matrix[d], clusters[c].centroid)
+                if similarity > temp_max:
+                    print('Max sim = %f' % similarity)
+                    temp_max = similarity
+                    temp_index = c
+            if temp_max > threshold:
+                if d in clusters[temp_index].doc_index:
+                    if len(clusters[temp_index].doc_index) > 1:
+                        index = clusters[temp_index].doc_index.index(d)
+                        del clusters[temp_index].doc_index[index]
+                        del clusters[temp_index].docs[index]
+                        del clusters[temp_index].dists[index]
+                        clusters[temp_index].calculate_centroid()
+                        new_dists = copy.copy(distance_matrix[d])
+                        clusters[temp_index].dists.append(new_dists)
+                        new_doc = copy.copy(doc_list[d])
+                        clusters[temp_index].docs.append(new_doc)
+                        clusters[temp_index].doc_index.append(d)
+                else:
+                    for cluster_obj in clusters:
+                        if d in cluster_obj.doc_index:
+                            index = cluster_obj.doc_index.index(d)
+                            del cluster_obj.doc_index[index]
+                            del cluster_obj.docs[index]
+                            del cluster_obj.dists[index]
+                    new_dists = copy.copy(distance_matrix[d])
+                    clusters[temp_index].dists.append(new_dists)
+                    new_doc = copy.copy(doc_list[d])
+                    clusters[temp_index].docs.append(new_doc)
+                    clusters[temp_index].doc_index.append(d)
+                    clusters[temp_index].calculate_centroid()
 
 
+    for cl in range(0, len(clusters)):
+        print('Cluster - %d' % cl)
+        for i in range(0, len(clusters[cl].doc_index)):
+            print('Doc num: %d, name: %s' % (clusters[cl].doc_index[i], clusters[cl].docs[i].doc_name))
+        print('----------------------------------------------')

@@ -5,11 +5,12 @@ import copy
 
 
 class Document:
-
-    def __init__(self):
+    def __init__(self, doc_name, doc_link=None):
         self.all_paths = []
+        self.doc_name = doc_name
+        self.doc_link = None
 
-    def find_real_paths(self,tag, tmp_list, d):
+    def find_real_paths(self, tag, tmp_list, d):
         tmp_list.append(tag.tag)
         if len(tag) != 0:
             for t in tag:
@@ -72,7 +73,7 @@ class Shingles:
         for i in range(0, len(self.path)):
             try:
                 w1 = tag_weight[self.path[i]]
-            except Exception:
+            except Exception, ex:
                 w1 = 0.1
             if path_type == 0:
                 w3 = (a / ((i + self.depth) + a))
@@ -80,3 +81,21 @@ class Shingles:
                 w3 = (a / (self.depth + a))
             w += ((w1 * w2 * w3) / len(self.path))
         self.weight = w
+
+
+class Clusters:
+    def __init__(self, centroid):
+        self.dists = []
+        self.docs = []
+        self.doc_index = []
+        self.centroid = centroid
+
+    def calculate_centroid(self):
+        temp_centroid = []
+        for index_j in range(0,len(self.dists[0])):
+            new_value = 0.0
+            for index_i in range(0, len(self.dists)):
+                new_value += self.dists[index_i][index_j]
+            temp_centroid.append(new_value / len(self.dists))
+        new_list = copy.copy(temp_centroid)
+        self.centroid = new_list
