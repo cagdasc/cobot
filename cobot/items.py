@@ -11,4 +11,4 @@ import scrapy
 class CobotItem(scrapy.Item):
     page_name = scrapy.Field()
     page_url = scrapy.Field()
-    page_body = scrapy.Field()
+    page_full_path = scrapy.Field()

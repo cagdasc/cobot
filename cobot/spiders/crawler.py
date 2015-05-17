@@ -1,14 +1,14 @@
 __author__ = 'cagdascaglak'
 
 import os
-from scrapy import log
+import json
+from collections import namedtuple
+import cobot.settings
+from cobot import config
 from cobot.spiders import is_allowed, create_site_dir
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors.lxmlhtml import LxmlLinkExtractor
 from cobot.items import CobotItem
-
-from lxml import html
-from bs4 import BeautifulSoup
 
 
 class PageWalker(CrawlSpider):
@@ -17,10 +17,24 @@ class PageWalker(CrawlSpider):
 
     def __init__(self, *args, **kwargs):
         super(PageWalker, self).__init__(*args, **kwargs)
-        self.allowed_domains = kwargs.get('allowed').split(',')
-        self.start_urls = kwargs.get('start').split(',')
+        """
+        self.allowed_domains = kwargs.get('allowed_domains').split(',')
+        self.start_urls = kwargs.get('start_url').split(',')
         self.main_site = kwargs.get('main')
         self.page_dir = create_site_dir(self.main_site)
+        """
+        file_name = kwargs.get('cfg')
+        with open(file_name) as f:
+            config_file = f.read()
+            self.__config = json.loads(config_file, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+
+        self.allowed_domains = self.__config.initialize.allowed_domains
+        self.start_urls = self.__config.initialize.start_urls
+        self.main_site = self.__config.initialize.site_name
+        self.page_dir = create_site_dir(self.main_site)
+
+        cobot.settings.ROBOTSTXT_OBEY = self.__config.cobotsettings.robots
+        cobot.settings.CLOSESPIDER_PAGECOUNT = self.__config.cobotsettings.page_count
 
     def walker(self, response):
         page_items = CobotItem()
@@ -36,6 +50,7 @@ class PageWalker(CrawlSpider):
                         f.write(response.body)
                     page_items['page_url'] = response.url
                     page_items['page_name'] = file_name
+                    page_items['page_full_path'] = os.path.join(self.page_dir, file_name)
 
         except IOError:
             pass
