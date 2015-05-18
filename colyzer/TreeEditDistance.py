@@ -74,7 +74,9 @@ def containedIn(node_p, node, con):
 
     if not value:
         for new_node in node.node_list:
-            containedIn(node_p, new_node, con)
+            result = containedIn(node_p, new_node, con)
+            if result:
+                return True
         return False
     else:
         return value
