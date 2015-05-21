@@ -59,7 +59,7 @@ def selkow_distance(node_a, node_b):
     return dist[m][n]
 
 
-def get_ted_matrix(doc_list):
+def get_distance_matrix(doc_list):
     ted_dist = []
     for i in range(0, len(doc_list)):
         temp_list = []
@@ -68,10 +68,7 @@ def get_ted_matrix(doc_list):
             print('dist %d - %d = %d' % (i, j, dist))
             temp_list.append(dist)
         ted_dist.append(temp_list)
-    return ted_dist
 
-
-def normalize_distance_matrix(ted_dist):
     distance_matrix = []
     temp_max = 0.0
     for i in range(0, len(ted_dist)):
