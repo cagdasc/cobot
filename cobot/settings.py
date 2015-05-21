@@ -16,13 +16,12 @@ NEWSPIDER_MODULE = 'cobot.spiders'
 USER_AGENT = 'cobot is writing for final year project. It crawls and clusters downloaded page by structural similarity'
 DOWNLOAD_DELAY = 0.5
 
-"""
 ITEM_PIPELINES = {
     'cobot.pipelines.CobotPipeline': 20
 }
 """
-
 ITEM_PIPELINES = ['cobot.pipelines.CobotPipeline']
+"""
 
 ROBOTSTXT_OBEY = True
 
