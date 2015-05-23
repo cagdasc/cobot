@@ -3,7 +3,9 @@ __author__ = 'cagdascaglak'
 import os
 from lxml import etree
 from colyzer import ShingleBased, SelkowTED, ClusterAlgorithms
-from colyzer import SITES
+from cobot.spiders import SITES
+import json
+from collections import namedtuple
 
 import sys
 from twisted.internet import reactor
@@ -25,7 +27,11 @@ if __name__ == '__main__':
         log.start_from_crawler(crawler)
         reactor.run()
     else:
-        algorithm = 0  # 0 - shingle, 1 - ted
+        with open(sys.argv[1]) as f:
+            config_file = f.read()
+            print(config_file)
+            __config = json.loads(config_file, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
+        algorithm = __config.algorithm.which
 
         doc_list = []
         html_files_path = []
@@ -39,7 +45,7 @@ if __name__ == '__main__':
 
                         root_tag = tree.getroot()[1]
 
-                        if algorithm == 0:
+                        if algorithm == 'shingle':
                             doc = ShingleBased.Document(html_file)
                             doc.find_all_real_paths(root_tag, -1)
                             doc.find_all_virtual_paths(root_tag, 0)
@@ -48,15 +54,21 @@ if __name__ == '__main__':
                             doc = SelkowTED.Nodes(root_tag, doc_name=html_file)
                             doc_list.append(doc)
 
-        if algorithm == 0:
+        if algorithm == 'shingle':
             distance_matrix = ShingleBased.get_distance_matrix(doc_list)
             print(distance_matrix)
-            clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            clustering = ClusterAlgorithms.Clustering(__config.algorithm.shingle.threshold,
+                                                      __config.algorithm.shingle.iteration,
+                                                      __config.algorithm.shingle.cluster_size,
+                                                      __config.initialize.site_name)
             clustering.process(doc_list, distance_matrix)
             clustering.pretty_print()
         else:
             distance_matrix = SelkowTED.get_distance_matrix(doc_list)
             print(distance_matrix)
-            clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            clustering = ClusterAlgorithms.Clustering(__config.algorithm.ted.threshold,
+                                                      __config.algorithm.ted.iteration,
+                                                      __config.algorithm.ted.cluster_size,
+                                                      __config.initialize.site_name)
             clustering.process(doc_list, distance_matrix)
             clustering.pretty_print()
