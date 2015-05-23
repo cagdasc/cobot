@@ -67,7 +67,7 @@ class Document:
     def __init__(self, doc_name, doc_link=None):
         self.all_paths = []
         self.doc_name = doc_name
-        self.doc_link = None
+        self.doc_link = doc_link
 
     def find_real_paths(self, tag, tmp_list, d):
         tmp_list.append(tag.tag)
