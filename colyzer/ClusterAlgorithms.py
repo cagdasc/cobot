@@ -2,6 +2,9 @@ __author__ = 'cagdas'
 
 import copy
 import math
+import json
+from cobot.spiders import SITES
+import os
 
 
 class Clusters:
@@ -23,11 +26,12 @@ class Clusters:
 
 
 class Clustering:
-    def __init__(self, threshold, iteration, cluster_size):
+    def __init__(self, threshold, iteration, cluster_size, site_name):
         self.threshold = threshold
         self.iteration = iteration
         self.cluster_size = cluster_size
         self.clusters = []
+        self.site_name = site_name
 
     # Calculate similarity between two vectors
     def sim(self, row_i, row_j):
@@ -92,9 +96,35 @@ class Clustering:
                         self.clusters[temp_index].doc_index.append(d)
                         self.clusters[temp_index].calculate_centroid()
 
+        cluster_list = []
+        for cluster in self.clusters:
+            result_doc_list = []
+            for doc in cluster.docs:
+                result_doc = Document(doc.doc_name, doc.doc_link)
+                result_doc_list.append(result_doc.__dict__)
+            cluster_list.append(result_doc_list)
+        result = Result(cluster_list)
+
+        json_txt = json.dumps(result.__dict__)
+        with open(os.path.join(SITES, self.site_name + '.json'), 'w') as f:
+            f.write(json_txt)
+
     def pretty_print(self):
         for cl in range(0, len(self.clusters)):
             print('Cluster - %d' % cl)
             for i in range(0, len(self.clusters[cl].doc_index)):
-                print('Doc num: %d, name: %s' % (self.clusters[cl].doc_index[i], self.clusters[cl].docs[i].doc_name))
+                print('Doc num: %d, name: %s, link: %s' % (self.clusters[cl].doc_index[i],
+                                                           self.clusters[cl].docs[i].doc_name,
+                                                           self.clusters[cl].docs[i].doc_link))
             print('----------------------------------------------')
+
+
+class Result:
+    def __init__(self, cluster_list):
+        self.cluster_list = cluster_list
+
+
+class Document:
+    def __init__(self, doc_name, doc_link):
+        self.doc_name = doc_name
+        self.doc_link = doc_link
