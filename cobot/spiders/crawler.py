@@ -29,8 +29,8 @@ class PageWalker(CrawlSpider):
         self.page_dir = create_site_dir(self.main_site)
         self.algorithm = self.__config.algorithm
 
-        cobot.settings.ROBOTSTXT_OBEY = self.__config.cobotsettings.robots
-        cobot.settings.CLOSESPIDER_PAGECOUNT = self.__config.cobotsettings.page_count
+        cobot.settings.ROBOTSTXT_OBEY = self.__config.cobot_settings.robots
+        cobot.settings.CLOSESPIDER_PAGECOUNT = self.__config.cobot_settings.page_count
 
     def walker(self, response):
         page_items = CobotItem()

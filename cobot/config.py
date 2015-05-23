@@ -2,9 +2,9 @@ __author__ = 'cagdas'
 
 
 class Config:
-    def __init__(self, initialize, cobotsettings, algorithm):
+    def __init__(self, initialize, cobot_settings, algorithm):
         self.initialize = initialize
-        self.cobotsettings = cobotsettings
+        self.cobot_settings = cobot_settings
         self.algorithm = algorithm
 
 

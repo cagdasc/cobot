@@ -1,7 +1,7 @@
 __author__ = 'cagdascaglak'
 import os
 
-SITES = os.path.join(os.getcwd(), '..', 'sites')
+# SITES = os.path.join(os.getcwd(), '..', 'sites')
 
 tag_weight= {'a':0.8, 'abbr': 0.08, 'body': 0.8,'audio': 0.1, 'b': 0.38, 'br': 0.28, 'button': 0.47, 'code': 0.33,
              'col': 0.157, 'dd': 0.6, 'form': 0.78, 'head': 0.8, 'img': 0.7, 'h1': 0.7, 'h2': 0.7, 'h3': 0.7, 'h4': 0.7,

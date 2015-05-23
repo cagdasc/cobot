@@ -29,13 +29,19 @@ class CobotPipeline(object):
         if spider.algorithm.which == 'shingle':
             distance_matrix = ShingleBased.get_distance_matrix(self.doc_list)
             print(distance_matrix)
-            clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            # clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            clustering = ClusterAlgorithms.Clustering(spider.algorithm.shingle.threshold,
+                                                      spider.algorithm.shingle.iteration,
+                                                      spider.algorithm.shingle.cluster_size,
+                                                      spider.initialize.site_name)
             clustering.process(self.doc_list, distance_matrix)
             clustering.pretty_print()
         elif spider.algorithm.which == 'ted':
             distance_matrix = SelkowTED.get_distance_matrix(self.doc_list)
             print(distance_matrix)
-            clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            # clustering = ClusterAlgorithms.Clustering(0.755, 500, 5)
+            clustering = ClusterAlgorithms.Clustering(spider.algorithm.ted.threshold, spider.algorithm.ted.iteration,
+                                                      spider.algorithm.ted.cluster_size, spider.initialize.site_name)
             clustering.process(self.doc_list, distance_matrix)
             clustering.pretty_print()
 
