@@ -5,6 +5,7 @@ import math
 import json
 from cobot.spiders import SITES
 import os
+import sys
 
 
 class Clusters:
@@ -45,6 +46,61 @@ class Clustering:
             row_j_sq_sum += math.pow(row_j[index], 2)
 
         return round(row_ij_sum / (math.sqrt(row_i_sq_sum) * math.sqrt(row_j_sq_sum)), 5)
+
+    def k_means_process(self, doc_list, distance_matrix):
+        for i in range(0, self.cluster_size):  # clusters initialization
+            new_list = copy.copy(distance_matrix[i])
+            cluster_obj = Clusters(new_list)
+            cluster_obj.dists.append(new_list)
+            new_doc = copy.copy(doc_list[i])
+            cluster_obj.docs.append(new_doc)
+            cluster_obj.doc_index.append(i)
+            self.clusters.append(cluster_obj)
+
+        for it in range(0, self.iteration):
+            print('Iteration --> ' + str(it))
+            for d in range(0, len(distance_matrix)):
+                temp_min = float(sys.maxint)
+                temp_index = 0
+                for c in range(0, len(self.clusters)):
+                    dist = self.euclidean_distance(distance_matrix[d], self.clusters[c].centroid)
+                    if dist < temp_min:
+                        temp_min = dist
+                        temp_index = c
+                if d not in self.clusters[temp_index].doc_index:
+                    for cluster_obj in self.clusters:  # delete this vector, add new cluster and calculate new centroid
+                        if d in cluster_obj.doc_index:
+                            index = cluster_obj.doc_index.index(d)
+                            del cluster_obj.doc_index[index]
+                            del cluster_obj.docs[index]
+                            del cluster_obj.dists[index]
+                    new_dists = copy.copy(distance_matrix[d])
+                    self.clusters[temp_index].dists.append(new_dists)
+                    new_doc = copy.copy(doc_list[d])
+                    self.clusters[temp_index].docs.append(new_doc)
+                    self.clusters[temp_index].doc_index.append(d)
+            for c in self.clusters:
+                c.calculate_centroid()
+
+        cluster_list = []
+        for cluster in self.clusters:
+            result_doc_list = []
+            for doc in cluster.docs:
+                result_doc = Document(doc.doc_name, doc.doc_link)
+                result_doc_list.append(result_doc.__dict__)
+            cluster_list.append(result_doc_list)
+        result = Result(cluster_list)
+
+        json_txt = json.dumps(result.__dict__)
+        with open(os.path.join(SITES, self.site_name + '.json'), 'w') as f:
+            f.write(json_txt)
+
+    def euclidean_distance(self, vector_0, vector_1):
+        sum_v = 0.0
+        for i in range(0, len(vector_0)):
+            sum_v += math.pow(vector_0[i] - vector_1[i], 2)
+        return math.sqrt(sum_v)
+
 
     def process(self, doc_list, distance_matrix):
         for i in range(0, self.cluster_size):  # clusters initialization
