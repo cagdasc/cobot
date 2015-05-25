@@ -15,19 +15,22 @@ class PageWalker(CrawlSpider):
     name = 'cobot'
     rules = (Rule(LxmlLinkExtractor(), callback='walker', follow=True),)
 
-    def __init__(self, *args, **kwargs):
-        super(PageWalker, self).__init__(*args, **kwargs)
+    def __init__(self, __config):
+        super(PageWalker, self).__init__(__config)
+        """
         file_name = kwargs.get('cfg')
         with open(file_name) as f:
             config_file = f.read()
             print(config_file)
             self.__config = json.loads(config_file, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-
+        """
+        self.__config = __config
         self.allowed_domains = self.__config.initialize.allowed_domains
         self.start_urls = self.__config.initialize.start_urls
         self.main_site = self.__config.initialize.site_name
         self.page_dir = create_site_dir(self.main_site)
         self.algorithm = self.__config.algorithm
+        self.initialize = self.__config.initialize
 
         cobot.settings.ROBOTSTXT_OBEY = self.__config.cobot_settings.robots
         cobot.settings.CLOSESPIDER_PAGECOUNT = self.__config.cobot_settings.page_count

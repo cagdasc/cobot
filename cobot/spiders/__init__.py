@@ -16,6 +16,7 @@ def is_allowed(filename):
 
 
 def create_site_dir(dir_name):
+    print('spiders.__init__: %s' % os.getcwd())
     dir_path = os.path.join(SITES, dir_name)
     if not os.path.exists(dir_path):
         try:

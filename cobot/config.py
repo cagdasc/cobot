@@ -2,7 +2,8 @@ __author__ = 'cagdas'
 
 
 class Config:
-    def __init__(self, initialize, cobot_settings, algorithm):
+    def __init__(self, crawling, initialize, cobot_settings, algorithm):
+        self.crawling = crawling
         self.initialize = initialize
         self.cobot_settings = cobot_settings
         self.algorithm = algorithm
@@ -22,20 +23,20 @@ class CobotSettings:
 
 
 class Algorithm:
-    def __init__(self, shingle, ted, which):
+    def __init__(self, k_means, shingle_based, which, which_clustering):
         self.which = which
-        self.shingle = shingle
-        self.ted = ted
+        self.which_clustering = which_clustering
+        self.k_means = k_means
+        self.shingle_based = shingle_based
 
 
-class ShingleAlgorithm:
-    def __init__(self, cluster_size, threshold, iteration):
+class KMeansAlgorithm:
+    def __init__(self, cluster_size, iteration):
         self.cluster_size = cluster_size
-        self.threshold = threshold
         self.iteration = iteration
 
 
-class TEDAlgorithm:
+class ShingleBasedAlgorithm:
     def __init__(self, cluster_size, threshold, iteration):
         self.cluster_size = cluster_size
         self.threshold = threshold
