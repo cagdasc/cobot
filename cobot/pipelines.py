@@ -19,6 +19,7 @@ import os
 from cobot.spiders import SITES
 from cobot import RawDocuments
 
+
 class CobotPipeline(object):
     def __init__(self):
         self.doc_list = []
@@ -41,7 +42,7 @@ class CobotPipeline(object):
         result = RawDocuments(raw_doc_list)
 
         json_txt = json.dumps(result.__dict__)
-        with open(os.path.join(SITES, spider.initialize.site_name + '_raw.json'), 'w') as f:
+        with open(os.path.join(SITES, spider.main_site + '_raw.json'), 'w') as f:
             f.write(json_txt)
 
         if spider.algorithm.which == 'shingle':
@@ -58,14 +59,14 @@ class CobotPipeline(object):
             clustering = ClusterAlgorithms.Clustering(None,
                                                       spider.algorithm.k_means.iteration,
                                                       spider.algorithm.k_means.cluster_size,
-                                                      spider.initialize.site_name)
+                                                      spider.main_site)
             clustering.k_means_process(self.doc_list, distance_matrix)
         elif spider.algorithm.which_clustering == 'shingle_based':
             clustering = ClusterAlgorithms.Clustering(spider.algorithm.shingle_based.threshold,
                                                       spider.algorithm.shingle_based.iteration,
                                                       spider.algorithm.shingle_based.cluster_size,
-                                                      spider.initialize.site_name)
-            clustering.process(self.doc_list, distance_matrix)
+                                                      spider.main_site)
+            clustering.shingle_based_process(self.doc_list, distance_matrix)
         else:
             print('There is no clustering algorithm!!')
             return
@@ -75,10 +76,29 @@ class CobotPipeline(object):
         tree = etree.parse(item['page_full_path'], parser=etree.HTMLParser(remove_comments=True))
         root_tag = tree.getroot()[1]
         if which == 'shingle':
-            doc = ShingleBased.Document(doc_name=item['page_name'], doc_link=item['page_url'])
+            doc = ShingleBased.ShingleDocument(doc_name=item['page_name'], doc_link=item['page_url'])
             doc.find_all_real_paths(root_tag, -1)
             doc.find_all_virtual_paths(root_tag, 0)
             self.doc_list.append(doc)
         elif which == 'ted':
-            doc = SelkowTED.Nodes(root_tag, doc_name=item['page_name'], doc_link=item['page_url'])
+            form_list = []
+            get_all_form(root_tag, form_list)
+            temp_root = etree.Element('root')
+            create_tree(temp_root, form_list)
+
+            doc = SelkowTED.Nodes(temp_root, doc_name=item['page_name'], doc_link=item['page_url'])
             self.doc_list.append(doc)
+
+
+def get_all_form(tag, form_list):
+    for t in tag:
+        if t.tag == 'form':
+            form_list.append(t)
+        else:
+            get_all_form(t, form_list)
+
+
+def create_tree(root, children):
+    for child in children:
+        new_child = etree.SubElement(root, child.tag)
+        create_tree(new_child, child)
