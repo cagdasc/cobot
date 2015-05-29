@@ -14,12 +14,12 @@
 
 __author__ = 'cagdascaglak'
 
+import os
+import sys
 import copy
 import math
 import json
 from cobot.spiders import SITES
-import os
-import sys
 
 
 class Clusters:
@@ -30,14 +30,15 @@ class Clusters:
         self.centroid = centroid
 
     def calculate_centroid(self):
-        temp_centroid = []
-        for index_j in range(0, len(self.dists[0])):
-            new_value = 0.0
-            for index_i in range(0, len(self.dists)):
-                new_value += self.dists[index_i][index_j]
-            temp_centroid.append(new_value / len(self.dists))
-        new_list = copy.copy(temp_centroid)
-        self.centroid = new_list
+        if len(self.dists) > 0:
+            temp_centroid = []
+            for index_j in range(0, len(self.dists[0])):
+                new_value = 0.0
+                for index_i in range(0, len(self.dists)):
+                    new_value += self.dists[index_i][index_j]
+                temp_centroid.append(new_value / len(self.dists))
+            new_list = copy.copy(temp_centroid)
+            self.centroid = new_list
 
 
 class Clustering:
@@ -62,6 +63,9 @@ class Clustering:
         return round(row_ij_sum / (math.sqrt(row_i_sq_sum) * math.sqrt(row_j_sq_sum)), 5)
 
     def k_means_process(self, doc_list, distance_matrix):
+        print('Distance Matrix length: %d' % len(distance_matrix))
+        print('Cluster Size: %d' % self.cluster_size)
+
         for i in range(0, self.cluster_size):  # clusters initialization
             new_list = copy.copy(distance_matrix[i])
             cluster_obj = Clusters(new_list)
@@ -70,6 +74,9 @@ class Clustering:
             cluster_obj.docs.append(new_doc)
             cluster_obj.doc_index.append(i)
             self.clusters.append(cluster_obj)
+
+        for cl in self.clusters:
+            print(cl.doc_index)
 
         for it in range(0, self.iteration):
             print('Iteration --> ' + str(it))
@@ -82,12 +89,25 @@ class Clustering:
                         temp_min = dist
                         temp_index = c
                 if d not in self.clusters[temp_index].doc_index:
+                    """
                     for cluster_obj in self.clusters:  # delete this vector, add new cluster and calculate new centroid
                         if d in cluster_obj.doc_index:
                             index = cluster_obj.doc_index.index(d)
                             del cluster_obj.doc_index[index]
                             del cluster_obj.docs[index]
                             del cluster_obj.dists[index]
+                    """
+                    i = 0
+                    is_in = False
+                    while i < len(self.clusters) and not is_in:
+                        if d in self.clusters[i].doc_index:
+                            index = self.clusters[i].doc_index.index(d)
+                            del self.clusters[i].doc_index[index]
+                            del self.clusters[i].docs[index]
+                            del self.clusters[i].dists[index]
+                            is_in = True
+                        i += 1
+
                     new_dists = copy.copy(distance_matrix[d])
                     self.clusters[temp_index].dists.append(new_dists)
                     new_doc = copy.copy(doc_list[d])
@@ -115,8 +135,7 @@ class Clustering:
             sum_v += math.pow(vector_0[i] - vector_1[i], 2)
         return math.sqrt(sum_v)
 
-
-    def process(self, doc_list, distance_matrix):
+    def shingle_based_process(self, doc_list, distance_matrix):
         for i in range(0, self.cluster_size):  # clusters initialization
             new_list = copy.copy(distance_matrix[i])
             cluster_obj = Clusters(new_list)
@@ -133,9 +152,8 @@ class Clustering:
                 temp_max = 0.0
                 temp_index = 0
                 for c in range(0, len(self.clusters)):
-                    similarity = self.sim(distance_matrix[d],
-                                                  self.clusters[c].centroid)  # compare vector with all clusters centroid
-                    if similarity > temp_max:  # find max similarity
+                    similarity = self.sim(distance_matrix[d], self.clusters[c].centroid)  # compare vector with
+                    if similarity > temp_max:  # find max similarity                    # all clusters centroid
                         print('Max sim = %f' % similarity)
                         temp_max = similarity
                         temp_index = c
@@ -153,12 +171,24 @@ class Clustering:
                             self.clusters[temp_index].docs.append(new_doc)
                             self.clusters[temp_index].doc_index.append(d)
                     else:  # if chosen vector not in this compared cluster, look other cluster and if it is already
+                        """
                         for cluster_obj in self.clusters:  # delete this vector, add new cluster and calculate new centroid
                             if d in cluster_obj.doc_index:
                                 index = cluster_obj.doc_index.index(d)
                                 del cluster_obj.doc_index[index]
                                 del cluster_obj.docs[index]
                                 del cluster_obj.dists[index]
+                        """
+                        i = 0
+                        is_in = False
+                        while i < len(self.clusters) and not is_in:
+                            if d in self.clusters[i].doc_index:
+                                index = self.clusters[i].doc_index.index(d)
+                                del self.clusters[i].doc_index[index]
+                                del self.clusters[i].docs[index]
+                                del self.clusters[i].dists[index]
+                                is_in = True
+                            i += 1
                         new_dists = copy.copy(distance_matrix[d])
                         self.clusters[temp_index].dists.append(new_dists)
                         new_doc = copy.copy(doc_list[d])
