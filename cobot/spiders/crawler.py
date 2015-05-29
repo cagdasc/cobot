@@ -24,6 +24,8 @@ from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors.lxmlhtml import LxmlLinkExtractor
 from cobot.items import CobotItem
 
+from time import gmtime, strftime
+
 
 class PageWalker(CrawlSpider):
     name = 'cobot'
@@ -31,17 +33,10 @@ class PageWalker(CrawlSpider):
 
     def __init__(self, __config):
         super(PageWalker, self).__init__(__config)
-        """
-        file_name = kwargs.get('cfg')
-        with open(file_name) as f:
-            config_file = f.read()
-            print(config_file)
-            self.__config = json.loads(config_file, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
-        """
         self.__config = __config
         self.allowed_domains = self.__config.initialize.allowed_domains
         self.start_urls = self.__config.initialize.start_urls
-        self.main_site = self.__config.initialize.site_name
+        self.main_site = self.__config.initialize.site_name + '_' + strftime('%Y%m%d-%H%M%S', gmtime())
         self.page_dir = create_site_dir(self.main_site)
         self.algorithm = self.__config.algorithm
         self.initialize = self.__config.initialize
