@@ -45,7 +45,7 @@ class CobotPipeline(object):
         with open(os.path.join(SITES, spider.main_site + '_raw.json'), 'w') as f:
             f.write(json_txt)
 
-        if spider.algorithm.which == 'shingle':
+        if spider.algorithm.which == 'sbsa':
             distance_matrix = ShingleBased.get_distance_matrix(self.doc_list)
             print(distance_matrix)
         elif spider.algorithm.which == 'ted':
@@ -55,17 +55,17 @@ class CobotPipeline(object):
             print('There is no algorithm!!')
             return
 
-        if spider.algorithm.which_clustering == 'k_means':
-            clustering = ClusterAlgorithms.Clustering(None,
-                                                      spider.algorithm.k_means.iteration,
+        if spider.algorithm.which_clustering == 'kmeans':
+            clustering = ClusterAlgorithms.Clustering(spider.algorithm.k_means.iteration,
                                                       spider.algorithm.k_means.cluster_size,
-                                                      spider.main_site)
+                                                      spider.main_site,
+                                                      spider.algorithm.which)
             clustering.k_means_process(self.doc_list, distance_matrix)
-        elif spider.algorithm.which_clustering == 'shingle_based':
-            clustering = ClusterAlgorithms.Clustering(spider.algorithm.shingle_based.threshold,
-                                                      spider.algorithm.shingle_based.iteration,
+        elif spider.algorithm.which_clustering == 'sbc':
+            clustering = ClusterAlgorithms.Clustering(spider.algorithm.shingle_based.iteration,
                                                       spider.algorithm.shingle_based.cluster_size,
-                                                      spider.main_site)
+                                                      spider.main_site,
+                                                      spider.algorithm.which)
             clustering.shingle_based_process(self.doc_list, distance_matrix)
         else:
             print('There is no clustering algorithm!!')
@@ -75,10 +75,15 @@ class CobotPipeline(object):
     def __create_doc_list(self, item, which):
         tree = etree.parse(item['page_full_path'], parser=etree.HTMLParser(remove_comments=True))
         root_tag = tree.getroot()[1]
-        if which == 'shingle':
+        if which == 'sbsa':
+            form_list = []
+            get_all_form(root_tag, form_list)
+            temp_root = etree.Element('root')
+            create_tree(temp_root, form_list)
+
             doc = ShingleBased.ShingleDocument(doc_name=item['page_name'], doc_link=item['page_url'])
-            doc.find_all_real_paths(root_tag, -1)
-            doc.find_all_virtual_paths(root_tag, 0)
+            doc.find_all_real_paths(temp_root, -1)
+            doc.find_all_virtual_paths(temp_root, 0)
             self.doc_list.append(doc)
         elif which == 'ted':
             form_list = []
