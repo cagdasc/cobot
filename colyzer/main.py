@@ -15,7 +15,7 @@
 __author__ = 'cagdascaglak'
 
 import os
-from colyzer import ShingleBased, SelkowTED, ClusterAlgorithms
+import ShingleBased, SelkowTED, ClusterAlgorithms
 from cobot.spiders import SITES
 import json
 from collections import namedtuple
@@ -31,23 +31,20 @@ from cobot.pipelines import get_all_form, create_tree
 from lxml import etree
 import time
 
-def print_node(root):
-    for r in root:
-        print(r.tag)
-        print_node(r)
 
 if __name__ == '__main__':
 
-    start = time.time()
+    print(os.environ['PYTHONPATH'])
+
     with open(sys.argv[1]) as f:
         config_file = f.read()
         print(config_file)
         __config = json.loads(config_file, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))
 
     cluster_size = 0
-    if __config.algorithm.which_clustering == 'k_means':
+    if __config.algorithm.which_clustering == 'kmeans':
         cluster_size = __config.algorithm.k_means.cluster_size
-    elif __config.algorithm.which_clustering == 'shingle_based':
+    elif __config.algorithm.which_clustering == 'sbc':
         cluster_size = __config.algorithm.shingle_based.cluster_size
 
     if __config.cobot_settings.page_count < cluster_size:
@@ -65,6 +62,7 @@ if __name__ == '__main__':
         log.start_from_crawler(crawler)
         reactor.run()
     else:
+        start = time.time()  # start time
         algorithm = __config.algorithm.which
         doc_list = []
 
@@ -89,10 +87,15 @@ if __name__ == '__main__':
 
                 root_tag = tree.getroot()[1]
 
-                if algorithm == 'shingle':
+                if algorithm == 'sbsa':
+                    form_list = []
+                    get_all_form(root_tag, form_list)
+                    temp_root = etree.Element('root')
+                    create_tree(temp_root, form_list)
+
                     doc = ShingleBased.ShingleDocument(html_file, doc_link=doc_link)
-                    doc.find_all_real_paths(root_tag, -1)
-                    doc.find_all_virtual_paths(root_tag, 0)
+                    doc.find_all_real_paths(temp_root, -1)
+                    doc.find_all_virtual_paths(temp_root, 0)
                     doc_list.append(doc)
                 elif algorithm == 'ted':
                     form_list = []
@@ -106,7 +109,7 @@ if __name__ == '__main__':
                 else:
                     print('There is no algorithm!!')
         distance_matrix = []
-        if algorithm == 'shingle':
+        if algorithm == 'sbsa':
             distance_matrix = ShingleBased.get_distance_matrix(doc_list)
             print(distance_matrix)
         elif algorithm == 'ted':
@@ -115,21 +118,26 @@ if __name__ == '__main__':
         else:
             print('There is no algorithm!!')
 
-        if __config.algorithm.which_clustering == 'k_means':
-            clustering = ClusterAlgorithms.Clustering(None,
-                                                      __config.algorithm.k_means.iteration,
+        middle = time.time()  # analyze algorithm time diff
+
+        if __config.algorithm.which_clustering == 'kmeans':
+            clustering = ClusterAlgorithms.Clustering(__config.algorithm.k_means.iteration,
                                                       __config.algorithm.k_means.cluster_size,
-                                                      __config.initialize.site_name)
+                                                      __config.initialize.site_name,
+                                                      algorithm)
             clustering.k_means_process(doc_list, distance_matrix)
-        elif __config.algorithm.which_clustering == 'shingle_based':
-            clustering = ClusterAlgorithms.Clustering(__config.algorithm.shingle_based.threshold,
-                                                      __config.algorithm.shingle_based.iteration,
+        elif __config.algorithm.which_clustering == 'sbc':
+            clustering = ClusterAlgorithms.Clustering(__config.algorithm.shingle_based.iteration,
                                                       __config.algorithm.shingle_based.cluster_size,
-                                                      __config.initialize.site_name)
+                                                      __config.initialize.site_name,
+                                                      algorithm)
             clustering.shingle_based_process(doc_list, distance_matrix)
         else:
             print('There is no clustering algorithm!!')
         clustering.pretty_print()
 
-    end = time.time()
-    print(end - start)
+        end = time.time()  # end time
+
+        print('Analyze algorithm time diff %f' % (middle - start))
+        print('Clustering algorithm time diff: %f' % (end - middle))
+        print('Total time diff: %f' % (end - start))
