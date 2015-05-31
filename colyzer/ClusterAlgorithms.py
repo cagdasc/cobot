@@ -42,12 +42,13 @@ class Clusters:
 
 
 class Clustering:
-    def __init__(self, threshold, iteration, cluster_size, site_name):
-        self.threshold = threshold
+    def __init__(self, iteration, cluster_size, site_name, which):
         self.iteration = iteration
         self.cluster_size = cluster_size
         self.clusters = []
         self.site_name = site_name
+        self.threshold = 0
+        self.which = which
 
     # Calculate similarity between two vectors
     def sim(self, row_i, row_j):
@@ -63,9 +64,6 @@ class Clustering:
         return round(row_ij_sum / (math.sqrt(row_i_sq_sum) * math.sqrt(row_j_sq_sum)), 5)
 
     def k_means_process(self, doc_list, distance_matrix):
-        print('Distance Matrix length: %d' % len(distance_matrix))
-        print('Cluster Size: %d' % self.cluster_size)
-
         for i in range(0, self.cluster_size):  # clusters initialization
             new_list = copy.copy(distance_matrix[i])
             cluster_obj = Clusters(new_list)
@@ -89,14 +87,6 @@ class Clustering:
                         temp_min = dist
                         temp_index = c
                 if d not in self.clusters[temp_index].doc_index:
-                    """
-                    for cluster_obj in self.clusters:  # delete this vector, add new cluster and calculate new centroid
-                        if d in cluster_obj.doc_index:
-                            index = cluster_obj.doc_index.index(d)
-                            del cluster_obj.doc_index[index]
-                            del cluster_obj.docs[index]
-                            del cluster_obj.dists[index]
-                    """
                     i = 0
                     is_in = False
                     while i < len(self.clusters) and not is_in:
@@ -116,18 +106,7 @@ class Clustering:
             for c in self.clusters:
                 c.calculate_centroid()
 
-        cluster_list = []
-        for cluster in self.clusters:
-            result_doc_list = []
-            for doc in cluster.docs:
-                result_doc = Document(doc.doc_name, doc.doc_link)
-                result_doc_list.append(result_doc.__dict__)
-            cluster_list.append(result_doc_list)
-        result = Result(cluster_list)
-
-        json_txt = json.dumps(result.__dict__)
-        with open(os.path.join(SITES, self.site_name + '.json'), 'w') as f:
-            f.write(json_txt)
+        save_clusters(self.clusters, self.site_name,self.which, 'kmeans')
 
     def euclidean_distance(self, vector_0, vector_1):
         sum_v = 0.0
@@ -136,6 +115,8 @@ class Clustering:
         return math.sqrt(sum_v)
 
     def shingle_based_process(self, doc_list, distance_matrix):
+        self.threshold = get_mean(distance_matrix)
+
         for i in range(0, self.cluster_size):  # clusters initialization
             new_list = copy.copy(distance_matrix[i])
             cluster_obj = Clusters(new_list)
@@ -171,14 +152,6 @@ class Clustering:
                             self.clusters[temp_index].docs.append(new_doc)
                             self.clusters[temp_index].doc_index.append(d)
                     else:  # if chosen vector not in this compared cluster, look other cluster and if it is already
-                        """
-                        for cluster_obj in self.clusters:  # delete this vector, add new cluster and calculate new centroid
-                            if d in cluster_obj.doc_index:
-                                index = cluster_obj.doc_index.index(d)
-                                del cluster_obj.doc_index[index]
-                                del cluster_obj.docs[index]
-                                del cluster_obj.dists[index]
-                        """
                         i = 0
                         is_in = False
                         while i < len(self.clusters) and not is_in:
@@ -196,18 +169,7 @@ class Clustering:
                         self.clusters[temp_index].doc_index.append(d)
                         self.clusters[temp_index].calculate_centroid()
 
-        cluster_list = []
-        for cluster in self.clusters:
-            result_doc_list = []
-            for doc in cluster.docs:
-                result_doc = Document(doc.doc_name, doc.doc_link)
-                result_doc_list.append(result_doc.__dict__)
-            cluster_list.append(result_doc_list)
-        result = Result(cluster_list)
-
-        json_txt = json.dumps(result.__dict__)
-        with open(os.path.join(SITES, self.site_name + '.json'), 'w') as f:
-            f.write(json_txt)
+        save_clusters(self.clusters, self.site_name, self.which, 'sbc')
 
     def pretty_print(self):
         for cl in range(0, len(self.clusters)):
@@ -217,6 +179,32 @@ class Clustering:
                                                            self.clusters[cl].docs[i].doc_name,
                                                            self.clusters[cl].docs[i].doc_link))
             print('----------------------------------------------')
+
+
+def save_clusters(clusters, site_name, analyz_alg_name, clustering_alg_name):
+    cluster_list = []
+    for cluster in clusters:
+        result_doc_list = []
+        for doc in cluster.docs:
+            result_doc = Document(doc.doc_name, doc.doc_link)
+            result_doc_list.append(result_doc.__dict__)
+        cluster_list.append(result_doc_list)
+    result = Result(cluster_list)
+
+    json_txt = json.dumps(result.__dict__)
+    with open(os.path.join(SITES, site_name + '_' + analyz_alg_name + '_' + clustering_alg_name + '.json'), 'w') as f:
+        f.write(json_txt)
+
+
+def get_mean(distance_matrix):
+    sum_dist = 0.0
+    for i in range(0, len(distance_matrix)):
+        for j in range(0, len(distance_matrix[i])):
+            sum_dist += distance_matrix[i][j]
+
+    row = len(distance_matrix)
+    sum_row = (row * row) - row
+    return sum_dist / sum_row
 
 
 class Result:
