@@ -15,26 +15,27 @@
 __author__ = 'cagdascaglak'
 
 import os
-import ShingleBased, SelkowTED, ClusterAlgorithms
-from cobot.spiders import SITES
 import json
 from collections import namedtuple
-
 import sys
+import time
+
 from twisted.internet import reactor
 from scrapy.crawler import Crawler
 from scrapy import log, signals
-from cobot.spiders.crawler import PageWalker
 from scrapy.utils.project import get_project_settings
-
-from cobot.pipelines import get_all_form, create_tree
 from lxml import etree
-import time
 
+import ShingleBased
+import SelkowTED
+import ClusterAlgorithms
+from cobot.spiders import SITES
+from cobot.spiders.crawler import PageWalker
+from cobot.pipelines import get_all_form, create_tree
 
 if __name__ == '__main__':
 
-    print(os.environ['PYTHONPATH'])
+    # print(os.environ['PYTHONPATH'])
 
     with open(sys.argv[1]) as f:
         config_file = f.read()
@@ -126,15 +127,16 @@ if __name__ == '__main__':
                                                       __config.initialize.site_name,
                                                       algorithm)
             clustering.k_means_process(doc_list, distance_matrix)
+            clustering.pretty_print()
         elif __config.algorithm.which_clustering == 'sbc':
             clustering = ClusterAlgorithms.Clustering(__config.algorithm.shingle_based.iteration,
                                                       __config.algorithm.shingle_based.cluster_size,
                                                       __config.initialize.site_name,
                                                       algorithm)
             clustering.shingle_based_process(doc_list, distance_matrix)
+            clustering.pretty_print()
         else:
             print('There is no clustering algorithm!!')
-        clustering.pretty_print()
 
         end = time.time()  # end time
 
