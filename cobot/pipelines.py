@@ -45,6 +45,7 @@ class CobotPipeline(object):
         with open(os.path.join(SITES, spider.main_site + '_raw.json'), 'w') as f:
             f.write(json_txt)
 
+        distance_matrix = []
         if spider.algorithm.which == 'sbsa':
             distance_matrix = ShingleBased.get_distance_matrix(self.doc_list)
             print(distance_matrix)
