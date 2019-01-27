@@ -14,7 +14,7 @@ vulnerabilities in a chosen page, it can be said that all the pages in its clust
 same vulnerabilities. Thanks to this approach, the cost and time of full site security 
 analysis is reduced.
 
-##Usage
+## Usage
 	{ "crawling": true|false, 
 	  "initialize": {
 	    "allowed_domains": ["allowed domains for crawling web site"],
@@ -41,8 +41,8 @@ analysis is reduced.
 	export PYTHONPATH=/project/root
 	python colyzer/main.py sites/config/site.cfg
 
-##License
-	Copyright 2015 Cagdas Caglak
+## License
+	Copyright 2019 Cagdas Caglak
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
